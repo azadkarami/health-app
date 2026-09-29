@@ -11,10 +11,10 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -28,12 +28,12 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.5'
-          channel: 'stable'
-          cache: true
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          df -h
 
       - name: Install Flet
         run: |
@@ -48,11 +48,14 @@ jobs:
           cat pyproject.toml || echo "NOT FOUND!"
 
       - name: Build APK
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
+          FLUTTER_SUPPRESS_ANALYTICS: "true"
         run: |
           set -o pipefail
-          flet build apk --verbose 2>&1 | tee build.log
+          yes | flet build apk --verbose 2>&1 | tee build.log
 
-      - name: Show last lines
+      - name: Show last lines of log
         if: always()
         run: tail -n 200 build.log || true
 
