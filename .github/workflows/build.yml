@@ -16,6 +16,7 @@ jobs:
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      FLUTTER_ROOT: /home/runner/flutter/3.44.8
       CI: "true"
 
     steps:
@@ -63,15 +64,27 @@ jobs:
           wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.44.8-stable.tar.xz
           tar xf flutter_linux_3.44.8-stable.tar.xz
           mv flutter 3.44.8
-          /home/runner/flutter/3.44.8/bin/flutter config --no-analytics --enable-linux-desktop || true
-          /home/runner/flutter/3.44.8/bin/flutter --version
+          echo "/home/runner/flutter/3.44.8/bin" >> $GITHUB_PATH
+          echo "/home/runner/flutter/3.44.8/bin/cache/dart-sdk/bin" >> $GITHUB_PATH
+
+      - name: Verify Flutter on PATH
+        run: |
+          which flutter
+          which dart
+          flutter --version
+
+      - name: Configure Flutter
+        run: |
+          flutter config --no-analytics --enable-linux-desktop || true
+          flutter config --jdk-dir=$JAVA_HOME || true
+          flutter doctor || true
 
       - name: Build APK
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
         run: |
           flet build apk --verbose 2>&1 | tee build.log
-          echo "Build finished with code: ${PIPESTATUS[0]}"
+          exit ${PIPESTATUS[0]}
 
       - name: Show last lines of log
         if: always()
