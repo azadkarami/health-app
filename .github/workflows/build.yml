@@ -1,46 +1,90 @@
-name: Build Flet APK
+name: Build APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Set up Flutter
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.8'
+          flutter-version: '3.24.5'
           channel: 'stable'
+          cache: true
 
-      - name: Install Linux Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev mesa-utils
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Accept Android Licenses
+      - name: Accept licenses
         run: yes | flutter doctor --android-licenses || true
 
       - name: Install Flet
         run: |
           python -m pip install --upgrade pip
-          pip install flet[build]==1.0.2
+          pip install flet[all]
+
+      - name: Debug - list files
+        run: |
+          echo "=== files in root ==="
+          ls -la
+          echo "=== pyproject.toml ==="
+          cat pyproject.toml || echo "NOT FOUND!"
+          echo "=== assets ==="
+          ls -la assets/ || echo "no assets folder"
 
       - name: Build APK
-        run: flet build apk
+        run: |
+          set -o pipefail
+          flet build apk --verbose 2>&1 | tee build.log
 
-      - name: Upload APK
+      - name: Show last lines of build log
+        if: always()
+        run: tail -n 200 build.log || true
+
+      - name: Upload build log
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: flet-apk
+          name: build-log
+          path: build.log
+          if-no-files-found: warn
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-output
           path: build/apk/*.apk
+
+      - name: Create Release
+        if: success() && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: ???? v${{ github.run_number }}
+          files: build/apk/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
