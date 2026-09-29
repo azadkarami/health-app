@@ -28,24 +28,31 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Free disk space
+      - name: Setup Android env vars
         run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-          df -h
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
 
       - name: Install Flet
         run: |
           python -m pip install --upgrade pip
           pip install flet[all]
 
-      - name: Debug - list files
+      - name: Accept Android licenses
         run: |
-          echo "=== root files ==="
+          yes | sdkmanager --licenses || true
+
+      - name: Debug info
+        run: |
+          echo "=== files ==="
           ls -la
           echo "=== pyproject.toml ==="
           cat pyproject.toml || echo "NOT FOUND!"
+          echo "=== ANDROID_HOME ==="
+          echo $ANDROID_HOME
+          ls $ANDROID_HOME || echo "no android dir"
 
       - name: Build APK
         env:
@@ -57,7 +64,7 @@ jobs:
 
       - name: Show last lines of log
         if: always()
-        run: tail -n 200 build.log || true
+        run: tail -n 300 build.log || true
 
       - name: Upload build log
         if: always()
