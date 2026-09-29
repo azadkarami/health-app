@@ -67,8 +67,8 @@ jobs:
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
         run: |
-          set -o pipefail
-          flet build apk --verbose --skip-flutter-doctor 2>&1 | tee build.log
+          yes | flet build apk --verbose 2>&1 | tee build.log
+          exit ${PIPESTATUS[1]}
 
       - name: Show last lines of log
         if: always()
