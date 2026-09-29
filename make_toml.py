@@ -3,7 +3,7 @@ with open("pyproject.toml", "w", encoding="utf-8") as f:
 name = "health-app"
 version = "1.0.0"
 description = "Health Center App"
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.12,<3.13"
 
 [tool.flet]
 product = "Health Center"
