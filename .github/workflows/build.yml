@@ -28,6 +28,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev mesa-utils
 
+      - name: Accept Android Licenses
+        run: yes | flutter doctor --android-licenses
+
       - name: Install Flet
         run: |
           python -m pip install --upgrade pip
