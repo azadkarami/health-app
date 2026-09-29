@@ -1,0 +1,11 @@
+﻿[project]
+name = "health-app"
+version = "1.0.0"
+description = "اپلیکیشن خدمات مرکز بهداشت"
+requires-python = ">=3.12,<3.13"
+
+[tool.flet]
+product = "مرکز بهداشت"
+org = "com.healthcenter"
+bundle_id = "com.healthcenter.app"
+build_number = 1
