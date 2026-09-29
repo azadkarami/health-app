@@ -11,11 +11,12 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
 
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      CI: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -35,15 +36,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            libgtk-3-dev \
-            mesa-utils \
-            ninja-build \
-            libglu1-mesa \
-            clang \
-            cmake \
-            pkg-config \
-            libblkid-dev \
-            liblzma-dev
+            libgtk-3-dev mesa-utils ninja-build libglu1-mesa \
+            clang cmake pkg-config libblkid-dev liblzma-dev
 
       - name: Setup cmdline-tools
         run: |
@@ -55,24 +49,41 @@ jobs:
           echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
 
       - name: Accept Android licenses
-        run: |
-          yes | sdkmanager --licenses || true
+        run: yes | sdkmanager --licenses || true
 
       - name: Install Flet
         run: |
           python -m pip install --upgrade pip
           pip install flet[all]
 
+      - name: Pre-install Flutter 3.44.8
+        run: |
+          mkdir -p /home/runner/flutter
+          cd /home/runner/flutter
+          wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.44.8-stable.tar.xz
+          tar xf flutter_linux_3.44.8-stable.tar.xz
+          mv flutter 3.44.8
+          /home/runner/flutter/3.44.8/bin/flutter config --no-analytics --enable-linux-desktop || true
+          /home/runner/flutter/3.44.8/bin/flutter --version
+
       - name: Build APK
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
         run: |
-          yes | flet build apk --verbose 2>&1 | tee build.log
-          exit ${PIPESTATUS[1]}
+          flet build apk --verbose 2>&1 | tee build.log
+          echo "Build finished with code: ${PIPESTATUS[0]}"
 
       - name: Show last lines of log
         if: always()
         run: tail -n 300 build.log || true
+
+      - name: Check for APK
+        if: always()
+        run: |
+          echo "=== searching apk files ==="
+          find . -name "*.apk" -type f 2>&1 || echo "no apk found"
+          echo "=== build/apk ==="
+          ls -la build/apk/ 2>&1 || true
 
       - name: Upload build log
         if: always()
@@ -83,11 +94,12 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload APK
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: apk-output
           path: build/apk/*.apk
+          if-no-files-found: warn
 
       - name: Create Release
         if: success() && github.event_name == 'push'
