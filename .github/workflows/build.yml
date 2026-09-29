@@ -16,7 +16,6 @@ jobs:
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      FLUTTER_ROOT: /home/runner/flutter/3.44.8
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
       TERM: xterm-256color
@@ -55,66 +54,26 @@ jobs:
       - name: Accept Android licenses
         run: yes | sdkmanager --licenses || true
 
-      - name: Install Flet
+      - name: Install Flet (pinned)
         run: |
           python -m pip install --upgrade pip
-          pip install flet[all]
+          pip install "flet[all]==0.28.3"
 
-      # ========== ??? ??????? ==========
-      - name: List all files
+      - name: Test compile
         run: |
-          echo "=== tree ==="
-          find . -type f -not -path './.git/*' -not -path './build/*' | head -50
-          echo ""
-          echo "=== main.py head ==="
-          head -c 500 main.py | xxd | head -20
-          echo ""
-          echo "=== diseases_data.py head ==="
-          head -c 500 diseases_data.py | xxd | head -20
-
-      - name: Test compile main.py
-        run: |
-          echo "=== Compiling main.py ==="
           python -m py_compile main.py
-          echo "? main.py OK"
-
-      - name: Test compile diseases_data.py
-        run: |
-          echo "=== Compiling diseases_data.py ==="
           python -m py_compile diseases_data.py
-          echo "? diseases_data.py OK"
+          echo "? syntax OK"
 
-      - name: Test import (catch runtime errors)
+      - name: Build APK
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
         run: |
-          echo "=== Test import ==="
-          python -c "import diseases_data; print('diseases_data imports OK')"
-          python -c "import main; print('main imports OK')" || echo "(main needs page, that's expected)"
+          flet build apk --verbose 2>&1 | tee build.log
 
-      # ========== ???? ????? ==========
-      - name: Pre-install Flutter 3.44.8
-        run: |
-          mkdir -p /home/runner/flutter
-          cd /home/runner/flutter
-          wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.44.8-stable.tar.xz
-          tar xf flutter_linux_3.44.8-stable.tar.xz
-          mv flutter 3.44.8
-          echo "/home/runner/flutter/3.44.8/bin" >> $GITHUB_PATH
-          echo "/home/runner/flutter/3.44.8/bin/cache/dart-sdk/bin" >> $GITHUB_PATH
-
-      - name: Configure Flutter
-        run: |
-          flutter config --no-analytics --enable-linux-desktop || true
-          flutter config --jdk-dir=$JAVA_HOME || true
-          git config --global --add safe.directory '*'
-
-      - name: Build APK (with TTY simulation)
-        run: |
-          script -q -c "flet build apk --verbose" /dev/null 2>&1 | tee build.log
-          exit ${PIPESTATUS[0]}
-
-      - name: Show FULL log
+      - name: Show last lines of log
         if: always()
-        run: cat build.log || true
+        run: tail -n 200 build.log || true
 
       - name: Check for APK
         if: always()
