@@ -1,4 +1,5 @@
-[project]
+with open("pyproject.toml", "w", encoding="utf-8") as f:
+    f.write("""[project]
 name = "health-app"
 version = "1.0.0"
 description = "Health Center App"
@@ -9,3 +10,4 @@ product = "Health Center"
 org = "com.healthcenter"
 bundle_id = "com.healthcenter.app"
 build_number = 1
+""")
