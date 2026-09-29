@@ -1,20 +1,18 @@
 [project]
-name = "health-app"
+name = "home-salamat"
 version = "1.0.0"
-description = "My Health Home - Home Health Application"
-requires-python = ">=3.12,<3.13"
-dependencies = [
-    "flet==1.0.2"
-]
+description = "Home Salamat - Health App"
+requires-python = ">=3.10"
 
 [tool.flet]
-product = "???? ????? ??"
-org = "com.healthcenter"
-bundle_id = "com.healthcenter.myhealthhome"
+product = "Home Salamat"
+org = "ir.karaj.health"
+bundle_id = "ir.karaj.health.homesalamat"
 build_number = 1
 
 [tool.flet.app]
-assets = "assets"
+path = "."
 
-[tool.flet.android]
-icon = "assets/icon.png"
+[tool.flet.android.permission]
+"android.permission.INTERNET" = true
+"android.permission.CALL_PHONE" = true
