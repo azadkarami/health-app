@@ -13,54 +13,62 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
 
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android env vars
+      - name: Install Linux dependencies
         run: |
-          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
-          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            mesa-utils \
+            ninja-build \
+            libglu1-mesa \
+            clang \
+            cmake \
+            pkg-config \
+            libblkid-dev \
+            liblzma-dev
+
+      - name: Setup cmdline-tools
+        run: |
+          sudo mkdir -p $ANDROID_HOME/cmdline-tools
+          cd /tmp
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-*.zip -d $ANDROID_HOME/cmdline-tools
+          sudo mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest || true
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+
+      - name: Accept Android licenses
+        run: |
+          yes | sdkmanager --licenses || true
 
       - name: Install Flet
         run: |
           python -m pip install --upgrade pip
           pip install flet[all]
 
-      - name: Accept Android licenses
-        run: |
-          yes | sdkmanager --licenses || true
-
-      - name: Debug info
-        run: |
-          echo "=== files ==="
-          ls -la
-          echo "=== pyproject.toml ==="
-          cat pyproject.toml || echo "NOT FOUND!"
-          echo "=== ANDROID_HOME ==="
-          echo $ANDROID_HOME
-          ls $ANDROID_HOME || echo "no android dir"
-
       - name: Build APK
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
-          FLUTTER_SUPPRESS_ANALYTICS: "true"
         run: |
           set -o pipefail
-          yes | flet build apk --verbose 2>&1 | tee build.log
+          flet build apk --verbose --skip-flutter-doctor 2>&1 | tee build.log
 
       - name: Show last lines of log
         if: always()
