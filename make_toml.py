@@ -4,6 +4,9 @@ name = "health-app"
 version = "1.0.0"
 description = "Health Center App"
 requires-python = ">=3.12,<3.13"
+dependencies = [
+    "flet"
+]
 
 [tool.flet]
 product = "Health Center"
