@@ -1,56 +1,4 @@
-﻿import flet as ft
-from diseases_data import DISEASES
-
-# ============================================================
-# دیتای مراکز بهداشتی
-# ============================================================
-DEFAULT_SERVICES = ["vaccination", "maternal", "counseling", "medicine"]
-
-SERVICE_LABELS = {
-    "vaccination": ("💉", "واکسیناسیون"),
-    "maternal":    ("🤰", "مراقبت مادران"),
-    "counseling":  ("🗣️", "مشاوره"),
-    "medicine":    ("💊", "توزیع دارو"),
-    "child":       ("🧒", "مراقبت کودکان"),
-    "lab":         ("🧪", "آزمایشگاه"),
-    "diabetes":    ("🩸", "کنترل قند خون"),
-    "elderly":     ("👴", "مراقبت سالمندان"),
-    "dental":      ("🦷", "دندانپزشکی"),
-    "nutrition":   ("🥗", "مشاوره تغذیه"),
-}
-
-CENTERS = [
-    {
-        "id": 1,
-        "name": "مرکز بهداشت شماره ۱",
-        "address": "خیابان اصلی، پلاک ۱۰",
-        "phone": "0211234567",
-        "lat": 35.8320,
-        "lng": 50.9915,
-        "services": ["vaccination", "maternal", "counseling", "medicine"],
-    },
-    {
-        "id": 2,
-        "name": "مرکز بهداشت شماره ۲",
-        "address": "میدان انقلاب، جنب بیمارستان",
-        "phone": "0217654321",
-        "lat": 35.8405,
-        "lng": 50.9392,
-        "services": ["child", "lab", "diabetes"],
-    },
-    {
-        "id": 3,
-        "name": "مرکز بهداشت شماره ۳",
-        "address": "خیابان شهید بهشتی، کوچه گلستان",
-        "phone": "0219876543",
-        "lat": 35.8180,
-        "lng": 50.9550,
-        "services": None,
-    },
-]
-
-
-def main(page: ft.Page):
+﻿def main(page: ft.Page):
     page.title = "خانه سلامت من"
     page.rtl = True
     page.theme_mode = ft.ThemeMode.LIGHT
@@ -352,12 +300,5 @@ def main(page: ft.Page):
         selected_index=0
     )
 
-    page.add(ft.Container(content=content_area, padding=20,
-                          alignment=ft.Alignment.TOP_RIGHT))
-
-
-# ============================================================
-# اجرای اپ
-# ============================================================
-if __name__ == "__main__":
-    ft.app(main)
+    # ✅ فقط این خط تغییر کرده
+    page.add(content_area)
