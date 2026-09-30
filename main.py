@@ -21,18 +21,68 @@ SERVICE_LABELS = {
     "rabies":      ("🐕", "پیشگیری از هاری"),
 }
 
+# ============================================================
+# دسته‌بندی‌های بخش آموزش (۶ دسته)
+# ============================================================
+CATEGORIES_UI = [
+    {
+        "key": "واگیر",
+        "title": "بیماری‌های واگیر",
+        "subtitle": "بیماری‌های عفونی و قابل انتقال",
+        "icon": ft.Icons.CORONAVIRUS,
+        "color": ft.Colors.RED_600,
+        "bgcolor": ft.Colors.RED_50,
+    },
+    {
+        "key": "غیرواگیر",
+        "title": "بیماری‌های غیرواگیر",
+        "subtitle": "بیماری‌های مزمن و غیرقابل انتقال",
+        "icon": ft.Icons.FAVORITE,
+        "color": ft.Colors.GREEN_600,
+        "bgcolor": ft.Colors.GREEN_50,
+    },
+    {
+        "key": "واکسیناسیون",
+        "title": "واکسیناسیون",
+        "subtitle": "برنامه کشوری واکسیناسیون کودکان",
+        "icon": ft.Icons.VACCINES,
+        "color": ft.Colors.BLUE_600,
+        "bgcolor": ft.Colors.BLUE_50,
+    },
+    {
+        "key": "مادران باردار",
+        "title": "مراقبت مادر باردار",
+        "subtitle": "مراقبت‌های کامل دوران بارداری",
+        "icon": ft.Icons.PREGNANT_WOMAN,
+        "color": ft.Colors.PINK_400,
+        "bgcolor": ft.Colors.PINK_50,
+    },
+    {
+        "key": "هیپوتیروئیدی نوزادان",
+        "title": "هیپوتیروئیدی نوزادان",
+        "subtitle": "غربالگری و مراقبت کم‌کاری تیروئید",
+        "icon": ft.Icons.CHILD_CARE,
+        "color": ft.Colors.PURPLE_400,
+        "bgcolor": ft.Colors.PURPLE_50,
+    },
+    {
+        "key": "شنوایی سنجی نوزادان",
+        "title": "شنوایی سنجی نوزادان",
+        "subtitle": "غربالگری و مراقبت شنوایی",
+        "icon": ft.Icons.HEARING,
+        "color": ft.Colors.ORANGE_600,
+        "bgcolor": ft.Colors.ORANGE_50,
+    },
+]
+
 
 def format_phone(phone: str) -> str:
-    """تبدیل 02634574939 به 026-34574939 برای نمایش"""
     if not phone:
         return ""
-    # موبایل (شروع با 09 یا 9)
     if phone.startswith("09") and len(phone) == 11:
         return f"{phone[:4]}-{phone[4:]}"
-    # تلفن ثابت با کد شهر
     if phone.startswith("0") and len(phone) == 11:
         return f"{phone[:3]}-{phone[3:]}"
-    # بقیه حالت‌ها رو دست‌نخورده برگردون
     return phone
 
 
@@ -298,7 +348,6 @@ def main(page: ft.Page):
         center_title=True
     )
 
-    # ===== پیام خوش‌آمدگویی =====
     def close_welcome(e):
         welcome_dialog.open = False
         page.update()
@@ -326,8 +375,7 @@ def main(page: ft.Page):
                 ft.Text("karamiazad1990@gmail.com", size=12, color=ft.Colors.GREY_500,
                         text_align=ft.TextAlign.CENTER),
             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=5),
-            padding=10,
-            width=350
+            padding=10, width=350
         ),
         actions=[
             ft.ElevatedButton("متوجه شدم، ورود", on_click=close_welcome,
@@ -340,9 +388,7 @@ def main(page: ft.Page):
     welcome_dialog.open = True
     page.update()
 
-    # ===== نمایش جزئیات بیماری =====
-    def show_disease_details(e):
-        disease_id = e.control.data
+    def show_item_details(disease_id):
         disease = next((d for d in DISEASES if d["id"] == disease_id), None)
         if not disease:
             return
@@ -350,6 +396,11 @@ def main(page: ft.Page):
         def go_back(e):
             page.views.pop()
             page.update()
+
+        cat_style = next(
+            (c for c in CATEGORIES_UI if c["key"] == disease["category"]),
+            {"color": ft.Colors.GREEN_600}
+        )
 
         page.views.append(
             ft.View(
@@ -365,43 +416,52 @@ def main(page: ft.Page):
                     ft.Container(
                         content=ft.Column([
                             ft.Container(
-                                content=ft.Image(src=disease["image"], width=200, height=200,
+                                content=ft.Image(src=disease["image"],
+                                                 width=200, height=200,
                                                  fit=ft.ImageFit.CONTAIN,
-                                                 error_content=ft.Icon(ft.Icons.IMAGE_NOT_SUPPORTED,
-                                                                       size=100, color=ft.Colors.GREY_400)),
+                                                 error_content=ft.Icon(
+                                                     ft.Icons.IMAGE_NOT_SUPPORTED,
+                                                     size=100,
+                                                     color=ft.Colors.GREY_400)),
                                 alignment=ft.alignment.center, padding=10
                             ),
                             ft.Row([
                                 ft.Container(
-                                    content=ft.Text(disease["category"], color=ft.Colors.WHITE, size=12),
-                                    bgcolor=ft.Colors.RED_400 if disease["category"] == "واگیر" else ft.Colors.GREEN_600,
+                                    content=ft.Text(disease["category"],
+                                                    color=ft.Colors.WHITE, size=12),
+                                    bgcolor=cat_style["color"],
                                     padding=ft.padding.symmetric(horizontal=10, vertical=5),
                                     border_radius=15
                                 )
                             ], alignment=ft.MainAxisAlignment.CENTER),
                             ft.Container(height=10),
-                            ft.Text(disease["title"], size=26, weight=ft.FontWeight.BOLD,
-                                    color=ft.Colors.BLUE_900),
+                            ft.Text(disease["title"], size=26,
+                                    weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900),
                             ft.Divider(height=20),
-                            ft.Text("تعریف بیماری", size=20, weight=ft.FontWeight.BOLD,
+                            ft.Text("تعریف", size=20, weight=ft.FontWeight.BOLD,
                                     color=ft.Colors.GREEN_700),
-                            ft.Text(disease["definition"], size=15, text_align=ft.TextAlign.RIGHT),
+                            ft.Text(disease["definition"], size=15,
+                                    text_align=ft.TextAlign.RIGHT),
                             ft.Divider(height=20),
-                            ft.Text("علائم بالینی", size=20, weight=ft.FontWeight.BOLD,
-                                    color=ft.Colors.ORANGE_700),
-                            ft.Text(disease["symptoms"], size=15, text_align=ft.TextAlign.RIGHT),
+                            ft.Text("علائم و نشانه‌ها / جزئیات", size=20,
+                                    weight=ft.FontWeight.BOLD, color=ft.Colors.ORANGE_700),
+                            ft.Text(disease["symptoms"], size=15,
+                                    text_align=ft.TextAlign.RIGHT),
                             ft.Divider(height=20),
-                            ft.Text("آمار و اطلاعات", size=20, weight=ft.FontWeight.BOLD,
-                                    color=ft.Colors.PURPLE_700),
-                            ft.Text(disease["stats"], size=15, text_align=ft.TextAlign.RIGHT),
+                            ft.Text("آمار و اطلاعات", size=20,
+                                    weight=ft.FontWeight.BOLD, color=ft.Colors.PURPLE_700),
+                            ft.Text(disease["stats"], size=15,
+                                    text_align=ft.TextAlign.RIGHT),
                             ft.Divider(height=20),
-                            ft.Text("راه‌های پیشگیری", size=20, weight=ft.FontWeight.BOLD,
-                                    color=ft.Colors.TEAL_700),
-                            ft.Text(disease["prevention"], size=15, text_align=ft.TextAlign.RIGHT),
+                            ft.Text("پیشگیری و مراقبت", size=20,
+                                    weight=ft.FontWeight.BOLD, color=ft.Colors.TEAL_700),
+                            ft.Text(disease["prevention"], size=15,
+                                    text_align=ft.TextAlign.RIGHT),
                             ft.Divider(height=20),
-                            ft.Text("چه زمانی به مرکز بهداشت مراجعه کنیم؟", size=20,
+                            ft.Text("چه زمانی مراجعه کنیم؟", size=20,
                                     weight=ft.FontWeight.BOLD, color=ft.Colors.RED_700),
-                            ft.Text(disease["when_to_visit"], size=15, text_align=ft.TextAlign.RIGHT),
+                            ft.Text(disease["when_to_visit"], size=15,
+                                    text_align=ft.TextAlign.RIGHT),
                             ft.Container(height=40),
                         ], spacing=10),
                         padding=20
@@ -412,52 +472,6 @@ def main(page: ft.Page):
         )
         page.update()
 
-    # ===== لیست بیماری‌ها =====
-    selected_category = {"value": "همه"}
-
-    def get_diseases_view():
-        cards = []
-        filtered = (DISEASES if selected_category["value"] == "همه"
-                    else [d for d in DISEASES if d["category"] == selected_category["value"]])
-        for disease in filtered:
-            cards.append(
-                ft.Card(
-                    content=ft.Container(
-                        content=ft.ListTile(
-                            leading=ft.Icon(
-                                ft.Icons.CORONAVIRUS if disease["category"] == "واگیر" else ft.Icons.FAVORITE,
-                                color=ft.Colors.RED_400 if disease["category"] == "واگیر" else ft.Colors.GREEN_600,
-                                size=40
-                            ),
-                            title=ft.Text(disease["title"], weight=ft.FontWeight.BOLD, size=16),
-                            subtitle=ft.Text(disease["summary"], size=13, max_lines=2),
-                            trailing=ft.Icon(ft.Icons.ARROW_FORWARD),
-                            on_click=show_disease_details,
-                            data=disease["id"]
-                        ),
-                        padding=5
-                    )
-                )
-            )
-        return ft.Column(cards, spacing=10)
-
-    def set_category(cat):
-        selected_category["value"] = cat
-        content_area.controls.clear()
-        content_area.controls.append(get_filter_buttons())
-        content_area.controls.append(get_diseases_view())
-        page.update()
-
-    def get_filter_buttons():
-        return ft.Row([
-            ft.ElevatedButton("همه", on_click=lambda e: set_category("همه")),
-            ft.ElevatedButton("واگیر", on_click=lambda e: set_category("واگیر"),
-                              bgcolor=ft.Colors.RED_100),
-            ft.ElevatedButton("غیرواگیر", on_click=lambda e: set_category("غیرواگیر"),
-                              bgcolor=ft.Colors.GREEN_100),
-        ], alignment=ft.MainAxisAlignment.CENTER, spacing=10)
-
-    # ===== محتوای خانه =====
     home_content = ft.Column([
         ft.Container(
             content=ft.Image(src="assets/icon.png", width=100, height=100,
@@ -476,12 +490,8 @@ def main(page: ft.Page):
         ft.Text("این اپلیکیشن جهت آشنایی شما با بیماری‌ها و خدمات مراکز سلامت طراحی شده است.",
                 size=15, text_align=ft.TextAlign.CENTER),
         ft.Container(height=15),
-        ft.Text(f"تعداد بیماری‌های موجود: {len(DISEASES)}", size=16,
+        ft.Text(f"تعداد بیماری‌ها: {len(DISEASES)}", size=16,
                 color=ft.Colors.BLUE_700, text_align=ft.TextAlign.CENTER),
-        ft.Text(f"واگیر: {len([d for d in DISEASES if d['category']=='واگیر'])} | "
-                f"غیرواگیر: {len([d for d in DISEASES if d['category']=='غیرواگیر'])}",
-                size=14, color=ft.Colors.GREY_700, text_align=ft.TextAlign.CENTER),
-        ft.Container(height=15),
         ft.Text(f"تعداد مراکز بهداشتی: {len(CENTERS)}", size=16,
                 color=ft.Colors.GREEN_700, text_align=ft.TextAlign.CENTER),
         ft.Container(height=20),
@@ -496,7 +506,107 @@ def main(page: ft.Page):
         ft.Container(height=30),
     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
 
-    # ===== محتوای مراکز =====
+    def build_category_card(cat):
+        count = len([d for d in DISEASES if d["category"] == cat["key"]])
+        return ft.Card(
+            content=ft.Container(
+                content=ft.Row([
+                    ft.Container(
+                        content=ft.Icon(cat["icon"], color=cat["color"], size=40),
+                        bgcolor=cat["bgcolor"],
+                        padding=12,
+                        border_radius=12,
+                    ),
+                    ft.Container(width=15),
+                    ft.Column([
+                        ft.Text(cat["title"], size=16,
+                                weight=ft.FontWeight.BOLD,
+                                color=ft.Colors.BLUE_900),
+                        ft.Text(cat["subtitle"], size=12,
+                                color=ft.Colors.GREY_700),
+                        ft.Text(f"{count} مورد", size=11,
+                                color=cat["color"],
+                                weight=ft.FontWeight.BOLD),
+                    ], spacing=3, expand=True),
+                    ft.Icon(ft.Icons.ARROW_FORWARD_IOS,
+                            color=ft.Colors.GREY_400, size=16),
+                ], alignment=ft.MainAxisAlignment.START,
+                   vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                padding=14,
+                on_click=lambda e, k=cat["key"]: open_category(k),
+            )
+        )
+
+    def build_categories_view():
+        return ft.Column(
+            [
+                ft.Text("آموزش", size=26, weight=ft.FontWeight.BOLD,
+                        color=ft.Colors.BLUE_900),
+                ft.Text("یک دسته را برای مشاهده انتخاب کنید:",
+                        size=14, color=ft.Colors.GREY_700),
+                ft.Container(height=10),
+            ] + [build_category_card(c) for c in CATEGORIES_UI] +
+            [ft.Container(height=30)],
+            spacing=10,
+        )
+
+    def build_category_items_view(category_key):
+        cat = next((c for c in CATEGORIES_UI if c["key"] == category_key),
+                   {"title": category_key, "icon": ft.Icons.CATEGORY,
+                    "color": ft.Colors.BLUE_600})
+
+        items = [d for d in DISEASES if d["category"] == category_key]
+
+        def go_back_to_categories(e):
+            content_area.controls.clear()
+            content_area.controls.append(build_categories_view())
+            page.update()
+
+        items_cards = []
+        for disease in items:
+            items_cards.append(
+                ft.Card(
+                    content=ft.Container(
+                        content=ft.ListTile(
+                            leading=ft.Icon(cat["icon"], color=cat["color"], size=36),
+                            title=ft.Text(disease["title"],
+                                          weight=ft.FontWeight.BOLD, size=15),
+                            subtitle=ft.Text(disease["summary"],
+                                             size=12, max_lines=2),
+                            trailing=ft.Icon(ft.Icons.ARROW_FORWARD),
+                            on_click=lambda e, d=disease: show_item_details(d["id"]),
+                        ),
+                        padding=5
+                    )
+                )
+            )
+
+        return ft.Column(
+            [
+                ft.Row([
+                    ft.IconButton(
+                        ft.Icons.ARROW_BACK,
+                        icon_color=cat["color"],
+                        on_click=go_back_to_categories,
+                        tooltip="بازگشت به دسته‌ها"
+                    ),
+                    ft.Icon(cat["icon"], color=cat["color"], size=28),
+                    ft.Container(width=5),
+                    ft.Text(cat["title"], size=20,
+                            weight=ft.FontWeight.BOLD, color=ft.Colors.BLUE_900),
+                ], alignment=ft.MainAxisAlignment.START,
+                   vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                ft.Text(f"{len(items)} مورد", size=12, color=ft.Colors.GREY_600),
+                ft.Divider(),
+            ] + items_cards + [ft.Container(height=30)],
+            spacing=10,
+        )
+
+    def open_category(category_key):
+        content_area.controls.clear()
+        content_area.controls.append(build_category_items_view(category_key))
+        page.update()
+
     async def open_map_route(e):
         center = e.control.data
         url = ("https://www.google.com/maps/dir/?api=1"
@@ -515,7 +625,8 @@ def main(page: ft.Page):
             icon, label = SERVICE_LABELS.get(key, ("🏥", key))
             chips.append(
                 ft.Container(
-                    content=ft.Text(f"{icon} {label}", size=12, color=ft.Colors.TEAL_900),
+                    content=ft.Text(f"{icon} {label}", size=12,
+                                    color=ft.Colors.TEAL_900),
                     bgcolor=ft.Colors.TEAL_50,
                     padding=ft.padding.symmetric(horizontal=10, vertical=6),
                     border_radius=20,
@@ -529,21 +640,25 @@ def main(page: ft.Page):
             content=ft.Container(
                 content=ft.Column([
                     ft.Row([
-                        ft.Text(center["name"], weight=ft.FontWeight.BOLD, size=15, expand=True),
-                        ft.IconButton(icon=ft.Icons.PHONE, icon_color=ft.Colors.GREEN_600,
+                        ft.Text(center["name"], weight=ft.FontWeight.BOLD,
+                                size=15, expand=True),
+                        ft.IconButton(icon=ft.Icons.PHONE,
+                                      icon_color=ft.Colors.GREEN_600,
                                       tooltip=f"تماس با {display_phone}",
                                       data=center,
                                       on_click=open_phone_call),
-                        ft.IconButton(icon=ft.Icons.LOCATION_ON, icon_color=ft.Colors.RED_600,
+                        ft.IconButton(icon=ft.Icons.LOCATION_ON,
+                                      icon_color=ft.Colors.RED_600,
                                       tooltip="مشاهده مسیر روی نقشه",
                                       data=center,
                                       on_click=open_map_route),
                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                     ft.Text(center["address"], size=13, color=ft.Colors.GREY_700),
-                    ft.Text(f"📞 {display_phone}", size=13, color=ft.Colors.GREEN_700),
+                    ft.Text(f"📞 {display_phone}", size=13,
+                            color=ft.Colors.GREEN_700),
                     ft.Divider(height=12),
-                    ft.Text("خدمات این مرکز:", size=13, weight=ft.FontWeight.BOLD,
-                            color=ft.Colors.TEAL_700),
+                    ft.Text("خدمات این مرکز:", size=13,
+                            weight=ft.FontWeight.BOLD, color=ft.Colors.TEAL_700),
                     ft.Container(height=5),
                     build_services_row(center.get("services")),
                 ], spacing=4),
@@ -555,9 +670,10 @@ def main(page: ft.Page):
         [
             ft.Text("آدرس مراکز بهداشتی", size=24, weight=ft.FontWeight.BOLD,
                     color=ft.Colors.BLUE_900),
-            ft.Text("مرکز بهداشت غرب کرج", size=18, weight=ft.FontWeight.BOLD,
-                    color=ft.Colors.GREEN_700),
-            ft.Text(f"تعداد مراکز: {len(CENTERS)}", size=14, color=ft.Colors.GREY_700),
+            ft.Text("مرکز بهداشت غرب کرج", size=18,
+                    weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_700),
+            ft.Text(f"تعداد مراکز: {len(CENTERS)}", size=14,
+                    color=ft.Colors.GREY_700),
             ft.Text("📍 برای مسیریابی، 📞 برای تماس تلفنی مستقیم:", size=14),
             ft.Container(height=10),
         ]
@@ -574,8 +690,7 @@ def main(page: ft.Page):
         if index == 0:
             content_area.controls.append(home_content)
         elif index == 1:
-            content_area.controls.append(get_filter_buttons())
-            content_area.controls.append(get_diseases_view())
+            content_area.controls.append(build_categories_view())
         elif index == 2:
             content_area.controls.append(centers_content)
         page.update()
@@ -585,7 +700,7 @@ def main(page: ft.Page):
     page.navigation_bar = ft.NavigationBar(
         destinations=[
             ft.NavigationBarDestination(icon=ft.Icons.HOME, label="خانه"),
-            ft.NavigationBarDestination(icon=ft.Icons.BOOK, label="آموزش بیماری‌ها"),
+            ft.NavigationBarDestination(icon=ft.Icons.BOOK, label="آموزش"),
             ft.NavigationBarDestination(icon=ft.Icons.LOCATION_ON, label="آدرس مراکز"),
         ],
         on_change=on_nav_change,
